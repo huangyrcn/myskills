@@ -1,40 +1,60 @@
-# GitHub API for Repo Validation
+# GitHub Repo Validation
 
-## Auth
+`find_repo.py` uses GitHub as one of several discovery channels. It does not trust raw search results by default; it scores them against paper metadata.
 
-```bash
-AUTH_ARGS=()
-[ -n "$GITHUB_TOKEN" ] && AUTH_ARGS=(-H "Authorization: token $GITHUB_TOKEN")
-```
+## Discovery channels
 
-Limits: 60 req/hr (anon), 5000 req/hr (with token).
+1. Explicit repo URLs in LaTeX
+2. Explicit repo URLs in generated Markdown
+3. Explicit repo URLs found on metadata pages such as arXiv / OpenReview / DOI landing pages
+4. GitHub repository search
 
-## Get README
+## GitHub API usage
 
-```bash
-OWNER_REPO="owner/repo"
-curl -s "${AUTH_ARGS[@]}" -H "Accept: application/vnd.github.v3.raw" \
-  "https://api.github.com/repos/${OWNER_REPO}/readme"
-```
+Anonymous requests work with low limits.
+Set `GITHUB_TOKEN` for higher limits.
 
-Truncate to 5000 chars for validation. Fallback: fetch JSON + base64-decode.
-
-## Get Root Contents
+### Repo metadata
 
 ```bash
-curl -s "${AUTH_ARGS[@]}" "https://api.github.com/repos/${OWNER_REPO}/contents/" | \
-  python3 -c "import sys,json; [print(f['name']) for f in json.load(sys.stdin)]"
+curl -s -H "Accept: application/vnd.github+json" \
+  "https://api.github.com/repos/OWNER/REPO"
 ```
 
-## Get Repo Metadata
+### Raw README
 
 ```bash
-curl -s "${AUTH_ARGS[@]}" "https://api.github.com/repos/${OWNER_REPO}" | \
-  python3 -c "import sys,json; d=json.load(sys.stdin); print(f\"Stars: {d.get('stargazers_count',0)}\nDesc: {d.get('description','')}\nLang: {d.get('language','')}\")"
+curl -s -H "Accept: application/vnd.github.raw+json" \
+  "https://api.github.com/repos/OWNER/REPO/readme"
 ```
 
-## Scoring
+### Root contents
 
-README title match (3pts), "official implementation" (3pts), arXiv/DOI in README (2pts), author (2pts), env file (1pt), train/main script (1pt), stars>0 (1pt). Score ≥5=high, 2-4=medium, <2=low.
+```bash
+curl -s -H "Accept: application/vnd.github+json" \
+  "https://api.github.com/repos/OWNER/REPO/contents/"
+```
 
-Errors: 404=invalid, 403=rate limit (suggest adding `$GITHUB_TOKEN`), 301=follow redirect.
+## Scoring rules
+
+- explicit discovery channel weight:
+  - LaTeX: 8
+  - Markdown: 6
+  - Metadata page: 5
+  - GitHub search: 2
+- `paper title` appears in README / description: +3
+- `method_name` appears in README / description / repo name: +2
+- arXiv ID or DOI appears in README: +2
+- first-author last name appears in repo metadata: +1
+- repo claims `official implementation` or `official code`: +3
+- root contains runnable entrypoints such as `train.py`, `main.py`, `demo.py`: +1
+- repo has stars: +1
+- repo has at least 50 stars: +1
+
+## Confidence levels
+
+- `high`: score >= 8
+- `medium`: score >= 5
+- `low`: score < 5
+
+Only medium/high confidence repos are cloned automatically.

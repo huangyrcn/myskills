@@ -7,8 +7,8 @@
 | Skill | 说明 |
 |-------|------|
 | `skill-manager` | 管理 agent skills：搜索、安装、更新、重装 |
-| `paper-import` | 下载论文：metadata、PDF、LaTeX 源码、Markdown、代码仓库 |
-| `pdf-to-md` | 通过远程 GPU 服务器将 PDF 转换为高质量 Markdown |
+| `paper-import` | 仅用论文标题导入 metadata、PDF、arXiv LaTeX、Markdown，并多渠道查找代码仓库 |
+| `pdf-to-md` | 通过 MinerU API 的高质量 VLM 模型将 PDF 转换为 Markdown |
 
 ## 安装
 

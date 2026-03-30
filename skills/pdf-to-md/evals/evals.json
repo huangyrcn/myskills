@@ -1,0 +1,38 @@
+{
+  "skill_name": "pdf-to-md",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "把这篇英文双栏论文 PDF 转成 Markdown，保留图片和版面中提取出来的 figure 资源。",
+      "expected_output": "Create <pdf_stem>.md next to the input PDF and produce an accompanying <pdf_stem>_images/ directory when images are extracted.",
+      "files": [],
+      "expectations": [
+        "The skill invokes the MinerU API path rather than any deprecated remote backend.",
+        "The output Markdown file is written next to the input PDF.",
+        "An images directory with the same stem is created when the parser extracts images."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "把这份中文 PDF 转成 Markdown，语言提示用 ch。",
+      "expected_output": "Run the API conversion with the Chinese language hint and emit Markdown beside the PDF.",
+      "files": [],
+      "expectations": [
+        "The conversion command passes the ch language hint.",
+        "The output remains <pdf_stem>.md beside the source PDF.",
+        "If MINERU_API_TOKEN is missing, the response clearly tells the user that this token is required."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Convert this research paper PDF to Markdown and prioritize parsing quality for formulas and tables.",
+      "expected_output": "Use the API-only VLM backend and produce Markdown plus extracted image assets in the source directory.",
+      "files": [],
+      "expectations": [
+        "The skill uses the API-only VLM backend.",
+        "The response does not mention or use any removed remote-GPU backend.",
+        "The expected outputs are <stem>.md and <stem>_images/."
+      ]
+    }
+  ]
+}

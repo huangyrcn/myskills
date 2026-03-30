@@ -1,209 +1,158 @@
 ---
 name: paper-import
 description: >
-  Import a paper into the local literature library: metadata, PDF, LaTeX source, Markdown, and code repo.
-  Use this skill whenever the user wants to get, download, fetch, find, import, or save a paper —
-  even if they only mention the title, arXiv ID, or DOI.
-  Also use when the user wants to find or clone the code/implementation for a paper.
-  Triggers: "下载论文", "获取论文", "找这篇论文", "下载这篇", "导入论文", "import paper",
-  "get paper", "fetch paper", "download paper", "找代码", "下载代码", "find the code",
-  "get the implementation", "clone the repo", "有没有开源代码",
-  or any mention of acquiring a paper or its code.
-  Can be called silently by other skills (lit-review, idea-discovery) with an arXiv ID or DOI.
-  Output: literature/{identifier}/ with metadata.yaml, paper/, and optional repo/.
+  Import a paper into the local paper library from its title only.
+  Use this skill whenever the user wants to download a paper, save a paper locally,
+  fetch the PDF/LaTeX/Markdown package for a paper title, or find the official code
+  repository for a paper title. This skill expects the paper title as input, then
+  resolves metadata, downloads the PDF, downloads arXiv LaTeX when available,
+  converts PDF to Markdown through the pdf-to-md API workflow, and searches multiple
+  channels for the code repo before cloning a confident match.
+argument-hint: "<paper_title>"
+allowed-tools: Bash
 ---
 
 # Paper Import
 
-Downloads a complete paper package into a standardized local directory.
+Imports a paper package into `papers/{foldername}/` using a title-driven workflow.
 
-## Output Structure
+## Output Layout
 
-```
-literature/{identifier}/          e.g.  papers/vaswani2017attention/
-├── metadata.yaml            paper metadata + asset paths
+```text
+papers/{foldername}/
+├── metadata.yaml
+├── repo_search.json
 ├── paper/
-│   ├── paper.pdf            PDF full text
-│   ├── paper.md             Markdown version (via /pdf-to-md)
-│   ├── main.tex             LaTeX source (arXiv only, flattened)
-│   └── refs.bib             bibliography (if present)
-└── repo/                    code repository
+│   ├── paper.pdf
+│   ├── paper.md
+│   ├── main.tex            # when LaTeX is available
+│   ├── refs.bib            # when bibliography is available
+│   └── paper_images/
+└── repo/                   # only when a medium/high-confidence repo is found
 ```
 
-`{identifier}` = `{author}{year}{keyword}`, e.g. `vaswani2017attention`.
-See `references/identifier-generation.md` for rules.
-See `references/metadata-schema.md` for the full metadata.yaml field reference.
+`{foldername}` is finalized after the model confirms `venue + method_name` from the metadata.
 
----
+## Core Rules
 
-## Step 0: Check Existing (增量检查)
+- Input must be the paper title. If the user did not provide a title, ask for it.
+- Keep the LLM step for `venue` and `method_name`; do not guess this inside scripts.
+- Preserve the current PDF fallback chain, including Sci-Hub as the last resort in `download_pdf.py`.
+- Use the `pdf-to-md` API backend only. The high-quality VLM API path is the supported conversion path.
 
-**Before starting, check if paper already exists:**
+## Workflow
+
+### Step 1: Resolve metadata from the paper title
 
 ```bash
-IDENTIFIER_DIR="literature/{identifier}"
-
-if [ -f "${IDENTIFIER_DIR}/metadata.yaml" ]; then
-  # 检查 assets 是否已完整
-  if grep -q "assets:" "${IDENTIFIER_DIR}/metadata.yaml"; then
-    echo "✓ Already imported: ${IDENTIFIER_DIR}"
-    echo "  Use --force to re-download"
-    exit 0
-  fi
-fi
+python3 "${SKILL_DIR}/scripts/query_apis.py" "Paper Title Here" --output papers
 ```
 
-If `--force` flag is provided, delete existing directory and re-download.
+This creates a temporary title-slug directory:
 
----
+```text
+papers/{title_slug}/metadata.yaml
+```
 
-## Step 1: Resolve Metadata
+`query_apis.py` now uses a three-stage resolution strategy:
 
-**只接受论文标题作为输入。**
+- Stage 1, `title -> canonical paper`:
+  `arxiv`, `s2`, `openalex`, `crossref`, `dblp`
+- Stage 2, `canonical paper -> identifiers`:
+  use stage-1 matches plus contextual sources such as
+  `openreview`, `biorxiv`, `pubmed_central`, `europepmc`, `zenodo`, `openaire`, `doaj`, `hal`, `repec`, `core`
+  to recover `arxiv_id`, DOI, venue candidates, and exact lookup entry points
+- Stage 3, `identifiers -> assets`:
+  downstream scripts use the recovered identifiers to fetch PDF, LaTeX, Markdown, and the code repo
+
+`arXiv` stays in Stage 1 because it is still the highest-value source for CS/ML papers. But once an `arXiv` ID is known, the pipeline should switch to exact `id_list`-style arXiv lookups instead of relying on repeated title search.
+
+### Step 2: Read metadata and let the model finalize the folder name
+
+Read `metadata.yaml`, then use the paper `title`, `abstract`, and `venue_candidates` to produce:
+
+```json
+{
+  "venue": "neurips",
+  "method_name": "transformer",
+  "foldername": "neurips2017-vaswani-transformer"
+}
+```
+
+Use this prompt shape:
+
+```markdown
+You are confirming paper metadata for file naming.
+
+Title: {title}
+Venue Candidates:
+{venue_candidates}
+Abstract:
+{abstract}
+
+Tasks:
+1. Choose the best standardized venue token.
+2. Extract the method or acronym proposed by the paper.
+3. Return JSON with venue, method_name, foldername.
+```
+
+Then finalize the directory:
 
 ```bash
-# SKILL_DIR is the directory containing this SKILL.md
-python3 "${SKILL_DIR}/scripts/query_apis.py" "Paper Title Here" --output literature
+python3 "${SKILL_DIR}/scripts/finalize_metadata.py" \
+  --metadata "papers/{title_slug}/metadata.yaml" \
+  --venue "{venue}" \
+  --method "{method_name}"
 ```
 
-脚本会用标题去 arXiv、S2、OpenAlex、Crossref 等数据源搜索匹配，去重后写入 `literature/{identifier}/metadata.yaml`。
+The command prints the new `metadata.yaml` path inside the finalized folder.
 
----
+### Step 3: Import all assets
 
-## Step 2: Download (PDF + LaTeX + Code) — 并行执行
-
-**使用后台 Agent 并行下载，不阻塞主流程：**
+Run the full pipeline on the finalized metadata:
 
 ```bash
-PAPER_DIR="literature/{identifier}/paper"
-mkdir -p "${PAPER_DIR}"
+python3 "${SKILL_DIR}/scripts/import_paper.py" \
+  --metadata "papers/{foldername}/metadata.yaml"
 ```
 
-### 2a: PDF + LaTeX (主流程)
+This pipeline completes:
 
-**Download PDF:**
+1. PDF download using `download_pdf.py`
+2. arXiv LaTeX download when `latex_source.available=true`
+3. PDF to Markdown through the `pdf-to-md` API script
+4. Multi-channel repo discovery:
+   - repo URLs embedded in LaTeX
+   - repo URLs embedded in Markdown
+   - repo URLs linked from metadata pages such as arXiv/OpenReview/DOI landing pages
+   - GitHub repository search plus README validation
+5. Repo clone when the selected candidate is medium/high confidence
 
-```bash
-python3 "${SKILL_DIR}/scripts/download_pdf.py" \
-    --metadata "literature/{identifier}/metadata.yaml" \
-    --output "${PAPER_DIR}"
-```
+### Step 4: Report
 
-**Download LaTeX (arXiv papers only, 与 PDF 并行):**
+Report:
 
-```bash
-# 检查是否有 LaTeX 源码
-if grep -q "latex_source:" "${IDENTIFIER_DIR}/metadata.yaml"; then
-  LATEX_URL=$(grep -A1 "latex_source:" "${IDENTIFIER_DIR}/metadata.yaml" | grep "url:" | head -1 | sed 's/.*url: *"\([^"]*\)".*/\1/')
+- the finalized folder path
+- whether PDF / Markdown / LaTeX were produced
+- the selected repo URL and confidence
+- whether the repo was cloned or only recorded in `repo_search.json`
 
-  if [ -n "$LATEX_URL" ]; then
-    curl -L -A "Mozilla/5.0" -o /tmp/latex_src.tar.gz "$LATEX_URL" 2>/dev/null
+## Key Scripts
 
-    if file /tmp/latex_src.tar.gz | grep -qE "gzip|tar"; then
-      tar -xzf /tmp/latex_src.tar.gz -C "${PAPER_DIR}/" 2>/dev/null || \
-      tar -xf /tmp/latex_src.tar.gz -C "${PAPER_DIR}/"
+- `scripts/query_apis.py`
+  Resolves metadata and creates the temporary title-slug directory.
+- `scripts/finalize_metadata.py`
+  Writes `confirmed_venue`, `method_name`, `foldername`, then renames the directory.
+- `scripts/import_paper.py`
+  Runs the full asset pipeline: PDF, LaTeX, Markdown, repo discovery.
+- `scripts/find_repo.py`
+  Scores repo candidates from local assets, metadata pages, and GitHub search.
 
-      # Flatten: move .tex and .bib to paper/ root
-      find "${PAPER_DIR}" -mindepth 2 \( -name "*.tex" -o -name "*.bib" \) \
-          -exec mv {} "${PAPER_DIR}/" \; 2>/dev/null
-      find "${PAPER_DIR}" -mindepth 1 -type d -empty -delete 2>/dev/null
-      echo "✓ LaTeX downloaded"
-    fi
-  fi
-fi
-```
+## References
 
-**Convert PDF → Markdown:**
-
-```
-/pdf-to-md "${PAPER_DIR}/paper.pdf"
-```
-
-### 2b: Find Code (与 2a 并行)
-
-**在后台 Agent 中执行代码搜索，与 PDF 下载并行：**
-
-```
-Agent(run_in_background=true):
-  1. Search LaTeX source for repo URLs
-  2. Search paper.md for repo URLs
-  3. Web search if needed
-  4. Clone repo to literature/{identifier}/repo/
-```
-
-**代码搜索优先级：**
-
-1. **LaTeX 源码** (最可靠 — 作者嵌入):
-   ```bash
-   grep -rhoE 'https?://(github|gitlab|gitee)\.com/[a-zA-Z0-9._-]+/[a-zA-Z0-9._-]+' \
-       "${PAPER_DIR}"/*.tex 2>/dev/null | sort -u
-   ```
-
-2. **Markdown** (语义判断):
-   ```bash
-   grep -oE 'https?://(github|gitlab|gitee)\.com/[a-zA-Z0-9._-]+/[a-zA-Z0-9._-]+' \
-       "${PAPER_DIR}/paper.md" | sort -u
-   ```
-
-3. **网页搜索** (最后手段):
-   ```
-   "{paper title}" github implementation
-   ```
-
-**Clone repo:**
-
-```bash
-REPO_DIR="literature/{identifier}/repo"
-git clone "{repo_url}" "${REPO_DIR}"
-```
-
----
-
-## Step 3: Update metadata.yaml
-
-```bash
-cat >> "literature/{identifier}/metadata.yaml" << 'YAML'
-
-# local assets
-assets:
-  pdf: paper/paper.pdf
-  markdown: paper/paper.md
-YAML
-
-# LaTeX (if exists)
-[ -f "literature/{identifier}/paper/main.tex" ] && \
-    echo "  latex_dir: paper/" >> "literature/{identifier}/metadata.yaml"
-
-# Repo (if cloned)
-[ -d "literature/{identifier}/repo/.git" ] && \
-    echo "  repo: repo/" >> "literature/{identifier}/metadata.yaml"
-```
-
----
-
-## Step 4: Report
-
-```
-✓ literature/sun2019videobert/
-
-  paper/paper.pdf     6.0 MB  [arxiv]
-  paper/paper.md      48 KB   [/pdf-to-md]
-  paper/main.tex              [LaTeX, 2 .tex files]
-  repo/               173 MB  [github.com/xxx/VideoBERT ⭐124]
-```
-
----
-
-## Quick Reference
-
-```bash
-# Check what was fetched
-ls literature/{identifier}/
-cat literature/{identifier}/metadata.yaml
-
-# Read the paper
-cat literature/{identifier}/paper/paper.md
-
-# Explore code
-ls literature/{identifier}/repo/
-```
+- `references/identifier-generation.md`
+  Folder naming contract and the LLM extraction step.
+- `references/metadata-schema.md`
+  Canonical `metadata.yaml` schema.
+- `references/github-api.md`
+  GitHub scoring rules used for repo validation.

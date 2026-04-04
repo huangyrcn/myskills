@@ -5,6 +5,7 @@ Shared helpers for paper-import metadata and naming.
 
 from __future__ import annotations
 
+import os
 import re
 import unicodedata
 from pathlib import Path
@@ -50,12 +51,17 @@ def sanitize_method_name(method_name: str) -> str:
     return slugify(method_name, sep="-", max_length=15)
 
 
-def compute_foldername(metadata: dict, venue: str, method_name: str) -> str:
-    year = metadata.get("year") or "unknown"
-    lastname = first_author_lastname(metadata.get("authors", []))
+def compute_foldername(metadata: dict, venue: str, method_name: str, author: str = "") -> str:
+    """
+    Generate the short symlink name (not the actual directory name).
+
+    Format: {venue}-{author}-{method}
+    The venue token is expected to already include the year if needed (e.g., neurips2017).
+    """
+    author_token = author if author else first_author_lastname(metadata.get("authors", []))
     venue_token = standardize_venue_token(venue)
     method_token = sanitize_method_name(method_name)
-    return f"{venue_token}{year}-{lastname}-{method_token}"
+    return f"{venue_token}-{author_token}-{method_token}"
 
 
 def load_metadata(metadata_path: Path) -> dict:
@@ -82,6 +88,8 @@ def find_existing_import(output_dir: Path, *, title: str, doi: Optional[str]) ->
         return None
     normalized_title = normalize_title(title)
     for child in output_dir.iterdir():
+        if child.is_symlink():
+            continue
         metadata_path = child / "metadata.yaml"
         if not metadata_path.is_file():
             continue
@@ -97,3 +105,36 @@ def find_existing_import(output_dir: Path, *, title: str, doi: Optional[str]) ->
         if doi and existing_doi and existing_doi.lower() == doi.lower():
             return child
     return None
+
+
+def create_symlink_in_cwd(target: Path, link_name: str) -> Path | None:
+    """
+    Create a symlink in the current working directory pointing to the actual storage.
+
+    Skips symlink creation if cwd is the home directory (to avoid polluting ~).
+
+    Args:
+        target: The real directory path (e.g., ~/papers/{title_slug}/)
+        link_name: The desired symlink name (e.g., {venue}{year}-{author}-{method})
+
+    Returns:
+        The symlink path, or None if skipped.
+    """
+    cwd = Path(os.getcwd()).resolve()
+    target = target.resolve()
+
+    if cwd == Path.home().resolve():
+        print(f"Skipping symlink creation: cwd is home ({cwd})")
+        return None
+
+    link_path = cwd / link_name
+
+    if link_path.exists() or link_path.is_symlink():
+        if link_path.is_symlink() and link_path.resolve() == target:
+            print(f"Symlink already exists: {link_path} -> {target}")
+            return link_path
+        raise FileExistsError(f"A file or symlink already exists: {link_path}")
+
+    link_path.symlink_to(target)
+    print(f"Created symlink: {link_path} -> {target}")
+    return link_path

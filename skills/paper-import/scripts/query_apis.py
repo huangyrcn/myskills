@@ -848,8 +848,9 @@ def main():
     parser.add_argument("--top", "-t", type=int, default=10, help="返回的候选数量")
     parser.add_argument("--sources", "-s", default="",
                        help="数据源，逗号分隔 (默认: 标题判定 arxiv,s2,openalex,crossref,dblp；上下文补全 openreview,biorxiv,pubmed_central,europepmc,zenodo,openaire,doaj,hal,repec,core)")
-    parser.add_argument("--output", "-o", default="papers",
-                       help="输出目录 (默认: papers/ 在当前项目目录下)")
+    parser.add_argument("--output", "-o",
+                       default=str(Path.home() / "papers"),
+                       help="输出目录 (默认: ~/papers/)")
     parser.add_argument("--force", "-f", action="store_true",
                        help="强制重新下载，即使已存在")
 

@@ -4,39 +4,49 @@ description: >
   Import a paper into the local paper library from its title only.
   Use this skill whenever the user wants to download a paper, save a paper locally,
   fetch the PDF/LaTeX/Markdown package for a paper title, or find the official code
-  repository for a paper title. This skill expects the paper title as input, then
-  resolves metadata, downloads the PDF, downloads arXiv LaTeX when available,
-  converts PDF to Markdown through the pdf-to-md API workflow, and searches multiple
-  channels for the code repo before cloning a confident match.
+  repository for a paper title. The ONLY accepted input is a plain paper title
+  (e.g., "Attention Is All You Need"). If the user provides a DOI, arXiv ID,
+  paper URL, or BibTeX entry instead of a title, resolve it to a paper title first
+  using another skill such as /arxiv before calling this skill. Do NOT ask the user
+  for a DOI, author name, venue, year, or method name — the skill resolves all
+  metadata automatically by querying academic databases. This skill handles the full
+  pipeline: metadata resolution from title, PDF download, LaTeX download when available,
+  PDF to Markdown conversion through the pdf-to-md API workflow, and multi-channel
+  code repository discovery.
 argument-hint: "<paper_title>"
 allowed-tools: Bash
 ---
 
 # Paper Import
 
-Imports a paper package into `papers/{foldername}/` using a title-driven workflow.
+Imports a paper package into a local library using a title-driven workflow.
 
-## Output Layout
+## Storage Model
 
-```text
-papers/{foldername}/
-├── metadata.yaml
-├── repo_search.json
-├── paper/
-│   ├── paper.pdf
-│   ├── paper.md
-│   ├── main.tex            # when LaTeX is available
-│   ├── refs.bib            # when bibliography is available
-│   └── paper_images/
-└── repo/                   # only when a medium/high-confidence repo is found
+Actual files live under `~/papers/{title_slug}/`. The current working directory gets
+a symlink named `{venue}{year}-{author}-{method}` pointing to the real directory:
+
+```
+~/papers/attention_is_all_you_need/        ← actual storage
+  ├── metadata.yaml
+  ├── repo_search.json
+  ├── paper/
+  │   ├── paper.pdf
+  │   ├── paper.md
+  │   ├── main.tex            # when LaTeX is available
+  │   ├── refs.bib            # when bibliography is available
+  │   └── paper_images/
+  └── repo/                   # only when a medium/high-confidence repo is found
+
+cwd/neurips2017-vaswani-transformer/ → ~/papers/attention_is_all_you_need/  ← symlink
 ```
 
-`{foldername}` is finalized after the model confirms `venue + method_name` from the metadata.
+If the current working directory is `~`, the symlink is skipped to avoid polluting home.
 
 ## Core Rules
 
 - Input must be the paper title. If the user did not provide a title, ask for it.
-- Keep the LLM step for `venue` and `method_name`; do not guess this inside scripts.
+- Keep the LLM step for `venue`, `author`, and `method_name`; do not guess these inside scripts.
 - Preserve the current PDF fallback chain, including Sci-Hub as the last resort in `download_pdf.py`.
 - Use the `pdf-to-md` API backend only. The high-quality VLM API path is the supported conversion path.
 
@@ -45,14 +55,16 @@ papers/{foldername}/
 ### Step 1: Resolve metadata from the paper title
 
 ```bash
-python3 "${SKILL_DIR}/scripts/query_apis.py" "Paper Title Here" --output papers
+python3 "${SKILL_DIR}/scripts/query_apis.py" "Paper Title Here"
 ```
 
-This creates a temporary title-slug directory:
+This creates a directory under `~/papers/`:
 
 ```text
-papers/{title_slug}/metadata.yaml
+~/papers/{title_slug}/metadata.yaml
 ```
+
+`title_slug` is derived from the paper title (e.g., `attention_is_all_you_need`).
 
 `query_apis.py` now uses a three-stage resolution strategy:
 
@@ -69,13 +81,13 @@ papers/{title_slug}/metadata.yaml
 
 ### Step 2: Read metadata and let the model finalize the folder name
 
-Read `metadata.yaml`, then use the paper `title`, `abstract`, and `venue_candidates` to produce:
+Read `metadata.yaml`, then use the paper `title`, `abstract`, `venue_candidates`, and `authors` to produce:
 
 ```json
 {
-  "venue": "neurips",
-  "method_name": "transformer",
-  "foldername": "neurips2017-vaswani-transformer"
+  "venue": "neurips2017",
+  "author": "vaswani",
+  "method_name": "transformer"
 }
 ```
 
@@ -85,27 +97,31 @@ Use this prompt shape:
 You are confirming paper metadata for file naming.
 
 Title: {title}
+Authors: {authors}
 Venue Candidates:
 {venue_candidates}
 Abstract:
 {abstract}
 
 Tasks:
-1. Choose the best standardized venue token.
-2. Extract the method or acronym proposed by the paper.
-3. Return JSON with venue, method_name, foldername.
+1. Choose the best standardized venue token (include year if known).
+2. Extract the first author's last name.
+3. Extract the method or acronym proposed by the paper.
+4. Return JSON with venue, author, method_name.
 ```
 
-Then finalize the directory:
+Then finalize the directory and create the symlink:
 
 ```bash
 python3 "${SKILL_DIR}/scripts/finalize_metadata.py" \
-  --metadata "papers/{title_slug}/metadata.yaml" \
+  --metadata "~/papers/{title_slug}/metadata.yaml" \
   --venue "{venue}" \
+  --author "{author}" \
   --method "{method_name}"
 ```
 
-The command prints the new `metadata.yaml` path inside the finalized folder.
+This writes `confirmed_venue`, `author`, `method_name`, `foldername`, and `symlink_path` to `metadata.yaml`,
+then creates a symlink in the current working directory: `{foldername}/ -> ~/papers/{title_slug}/`.
 
 ### Step 3: Import all assets
 
@@ -113,7 +129,14 @@ Run the full pipeline on the finalized metadata:
 
 ```bash
 python3 "${SKILL_DIR}/scripts/import_paper.py" \
-  --metadata "papers/{foldername}/metadata.yaml"
+  --metadata "~/papers/{title_slug}/metadata.yaml"
+```
+
+Or use the symlink:
+
+```bash
+python3 "${SKILL_DIR}/scripts/import_paper.py" \
+  --metadata "{foldername}/metadata.yaml"
 ```
 
 This pipeline completes:
@@ -132,7 +155,7 @@ This pipeline completes:
 
 Report:
 
-- the finalized folder path
+- the symlink path (cwd) and the actual storage path (`~/papers/`)
 - whether PDF / Markdown / LaTeX were produced
 - the selected repo URL and confidence
 - whether the repo was cloned or only recorded in `repo_search.json`
@@ -140,9 +163,9 @@ Report:
 ## Key Scripts
 
 - `scripts/query_apis.py`
-  Resolves metadata and creates the temporary title-slug directory.
+  Resolves metadata and creates `~/papers/{title_slug}/metadata.yaml`.
 - `scripts/finalize_metadata.py`
-  Writes `confirmed_venue`, `method_name`, `foldername`, then renames the directory.
+  Writes `confirmed_venue`, `author`, `method_name`, `foldername`, then creates symlink in cwd.
 - `scripts/import_paper.py`
   Runs the full asset pipeline: PDF, LaTeX, Markdown, repo discovery.
 - `scripts/find_repo.py`

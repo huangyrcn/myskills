@@ -893,7 +893,7 @@ def main():
             )
 
         temp_identifier = generate_temp_identifier(m["best_match"])
-        print(f"Temp identifier: {temp_identifier} (will rename after method extraction)")
+        print(f"Temp identifier: {temp_identifier} (symlink created by finalize_metadata.py)")
 
         existing_dir = find_existing_import(
             output_dir,

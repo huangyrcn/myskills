@@ -4,10 +4,10 @@ download_pdf.py - PDF 下载工具
 
 用法:
     # 从 metadata.yaml 下载 (SKILL 内部调用)
-    python3 download_pdf.py --metadata papers/{identifier}/metadata.yaml --output papers/{identifier}/paper/
+    python3 download_pdf.py --metadata ~/papers/{identifier}/metadata.yaml --output ~/papers/{identifier}/paper/
 
     # 从 candidates.json 下载
-    python3 download_pdf.py --candidates /tmp/candidates.json --output papers/
+    python3 download_pdf.py --candidates /tmp/candidates.json --output ~/papers/
 
     # 直接用 DOI 下载
     python3 download_pdf.py --doi "10.48550/arXiv.1706.03762" --output /tmp/papers

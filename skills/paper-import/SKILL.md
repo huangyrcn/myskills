@@ -24,7 +24,7 @@ Imports a paper package into a local library using a title-driven workflow.
 ## Storage Model
 
 Actual files live under `~/papers/{title_slug}/`. The current working directory gets
-a symlink named `{venue}{year}-{author}-{method}` pointing to the real directory:
+a symlink named `{venue}-{method}-{author}` pointing to the real directory:
 
 ```
 ~/papers/attention_is_all_you_need/        ← actual storage
@@ -38,7 +38,7 @@ a symlink named `{venue}{year}-{author}-{method}` pointing to the real directory
   │   └── paper_images/
   └── repo/                   # only when a medium/high-confidence repo is found
 
-cwd/neurips2017-vaswani-transformer/ → ~/papers/attention_is_all_you_need/  ← symlink
+cwd/neurips2017-transformer-vaswani/ → ~/papers/attention_is_all_you_need/  ← symlink
 ```
 
 If the current working directory is `~`, the symlink is skipped to avoid polluting home.

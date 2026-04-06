@@ -5,11 +5,11 @@
 Location:
 
 ```text
-papers/{folder-or-title-slug}/metadata.yaml
+~/papers/{title_slug}/metadata.yaml
 ```
 
-Before finalization the directory name is the title slug.
-After finalization it becomes `venueyear-lastname-method`.
+The actual storage directory stays as `{title_slug}` under `~/papers/`.
+A symlink `{venue}-{method}-{author}` is created in the current working directory pointing to the real directory.
 
 ## Schema
 
@@ -25,8 +25,10 @@ year: 2017
 venue: "NeurIPS"
 
 confirmed_venue: "neurips"     # filled by finalize_metadata.py
+author: "vaswani"              # filled by finalize_metadata.py
 method_name: "transformer"     # filled by finalize_metadata.py
-foldername: "neurips2017-vaswani-transformer"  # filled by finalize_metadata.py
+foldername: "neurips2017-transformer-vaswani"  # computed by finalize_metadata.py
+symlink_path: "/path/to/cwd/neurips2017-transformer-vaswani"  # symlink path if cwd != ~
 
 identifiers:
   doi: "10.5555/3295222.3295349"
@@ -103,7 +105,9 @@ resolution:
 ## Notes
 
 - `venue` is the best raw venue from APIs; `confirmed_venue` is the model-confirmed token used for naming.
-- `foldername` is empty until the LLM extraction step runs.
+- `author` is the first author's last name, confirmed during the LLM step.
+- `foldername` is empty until `finalize_metadata.py` computes it as `{venue}-{method}-{author}`.
+- `symlink_path` is the full path to the cwd symlink; `null` if cwd is the home directory (symlink was skipped).
 - `assets.repo` is written only when a medium/high-confidence repo is cloned.
 - `repo_search.candidates` is still useful even when no repo is cloned.
 - `resolution` records how the title stage selected the paper, which identifiers were trusted, and which asset source should be preferred downstream.

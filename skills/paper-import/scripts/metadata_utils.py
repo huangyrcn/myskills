@@ -61,7 +61,7 @@ def compute_foldername(metadata: dict, venue: str, method_name: str, author: str
     author_token = author if author else first_author_lastname(metadata.get("authors", []))
     venue_token = standardize_venue_token(venue)
     method_token = sanitize_method_name(method_name)
-    return f"{venue_token}-{author_token}-{method_token}"
+    return f"{venue_token}-{method_token}-{author_token}"
 
 
 def load_metadata(metadata_path: Path) -> dict:
@@ -115,7 +115,7 @@ def create_symlink_in_cwd(target: Path, link_name: str) -> Path | None:
 
     Args:
         target: The real directory path (e.g., ~/papers/{title_slug}/)
-        link_name: The desired symlink name (e.g., {venue}{year}-{author}-{method})
+        link_name: The desired symlink name (e.g., {venue}-{method}-{author})
 
     Returns:
         The symlink path, or None if skipped.

@@ -1,0 +1,19 @@
+[
+  {"query": "help me import the paper 'Attention Is All You Need'", "should_trigger": true},
+  {"query": "download this paper for me: Deep Residual Learning for Image Recognition", "should_trigger": true},
+  {"query": "I want to save this paper locally with its PDF, markdown and code: BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding", "should_trigger": true},
+  {"query": "grab the paper Diffusion Models Beat GANs on Image Synthesis — need the full package with pdf and repo", "should_trigger": true},
+  {"query": "import 'Swin Transformer: Hierarchical Vision Transformer using Shifted Windows' into my paper library", "should_trigger": true},
+  {"query": "can you fetch LoRA: Low-Rank Adaptation of Large Language Models? pdf + latex + code please", "should_trigger": true},
+  {"query": "get me the full pipeline for this paper title: Masked Autoencoders Are Scalable Vision Learners", "should_trigger": true},
+  {"query": "add this to my papers folder: Chain-of-Thought Prompting Elicits Reasoning in Large Language Models", "should_trigger": true},
+
+  {"query": "download paper from arXiv 1706.03762", "should_trigger": false},
+  {"query": "fetch DOI 10.1145/3319619.3321972 and get the PDF", "should_trigger": false},
+  {"query": "what papers cite 'Attention Is All You Need' on arxiv?", "should_trigger": false},
+  {"query": "search for papers about vision transformers on semantic scholar", "should_trigger": false},
+  {"query": "convert this PDF to markdown: ~/Downloads/some_paper.pdf", "should_trigger": false},
+  {"query": "find the github repo for this arxiv id: 2303.17088", "should_trigger": false},
+  {"query": "summarize the paper 'Attention Is All You Need'", "should_trigger": false},
+  {"query": "write a bibtex entry for DOI 10.48550/arXiv.1706.03762", "should_trigger": false}
+]

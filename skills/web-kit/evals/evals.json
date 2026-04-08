@@ -1,0 +1,39 @@
+{
+  "skill_name": "web-kit",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "搜索一下 GPT-5 最新的消息",
+      "expected_output": "Should use ask-search to search for GPT-5 latest news",
+      "files": [],
+      "expectations": [
+        "Uses ask-search command",
+        "Query is relevant to GPT-5",
+        "Returns search results with titles and URLs"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "帮我读一下这个网页 https://example.com",
+      "expected_output": "Should use crwlr to crawl the page and return markdown content",
+      "files": [],
+      "expectations": [
+        "Uses crwlr crawl command",
+        "Includes -o markdown or -o md flag",
+        "URL is quoted",
+        "Returns page content"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "搜一下 Claude 4 的发布时间，然后打开找到的页面看看具体内容",
+      "expected_output": "Should first use ask-search to search, then use crwlr to read the found URL",
+      "files": [],
+      "expectations": [
+        "First uses ask-search for the search",
+        "Then uses crwlr crawl to read the found URL",
+        "Demonstrates the search-then-read workflow"
+      ]
+    }
+  ]
+}

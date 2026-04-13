@@ -1,0 +1,44 @@
+{
+  "skill_name": "paper-resolve",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "帮我确认 Geom-GCN 这篇论文具体是哪篇，最好给出 canonical 标题、URL 和 title_slug。",
+      "expected_output": "Resolve the fuzzy paper reference into a canonical paper identity without requiring DOI.",
+      "files": [],
+      "expectations": [
+        "The output includes a canonical title containing 'Geom-GCN' or 'Geometric Graph Convolutional Networks'",
+        "The output includes a title_slug field",
+        "The output includes a canonical_url or identity.canonical_url",
+        "The output includes resolution_confidence",
+        "No PDF is downloaded during this resolution"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "这个 OpenReview 链接对应的是哪篇论文？请先把论文身份确认下来，不要急着下载。https://openreview.net/forum?id=SkgBfaNKPr",
+      "expected_output": "Resolve an OpenReview-only paper identity and avoid requiring a DOI or final venue.",
+      "files": [],
+      "expectations": [
+        "The output resolves the OpenReview URL to a paper identity",
+        "The output includes an OpenReview identifier in the identity or identifiers",
+        "The output does not require a DOI to succeed",
+        "No PDF is downloaded during this resolution",
+        "The output indicates the paper may be under review or submitted, not necessarily published"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "把 Attention Is All You Need 这篇论文定位清楚，如果本地已有 raw 就直接复用。",
+      "expected_output": "Prefer local raw bundle reuse before doing network-based resolution.",
+      "files": [],
+      "expectations": [
+        "The output checks ~/papers for existing bundles first",
+        "If a local bundle exists, it is reused without network resolution",
+        "The output includes a canonical title",
+        "The output includes resolution_confidence",
+        "If local bundle is reused, the evidence mentions local reuse"
+      ]
+    }
+  ]
+}

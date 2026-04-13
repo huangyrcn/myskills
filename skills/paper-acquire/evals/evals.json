@@ -1,0 +1,42 @@
+{
+  "skill_name": "paper-acquire",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "这篇论文已经 resolve 了，请把 raw 补齐到 ~/papers/{title_slug}，包括 PDF、paper.md 和 repo 搜索结果。",
+      "expected_output": "Hydrate the canonical raw bundle without writing a reading note.",
+      "files": [],
+      "expectations": [
+        "The output includes a PDF file under paper/paper.pdf",
+        "The output includes paper.md under paper/paper.md",
+        "The output includes repo_search.json or repo discovery results in metadata",
+        "No reading-note.md is created by this skill",
+        "The metadata.yaml is updated with assets information"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "如果有 LaTeX 就优先用 pandoc 生成 paper.md，否则再回退到 PDF -> MinerU。",
+      "expected_output": "Apply the new normalization backend policy and write paper/paper.md.",
+      "files": [],
+      "expectations": [
+        "The output includes paper/paper.md",
+        "If LaTeX is available, paper.md is generated via pandoc from LaTeX",
+        "If no LaTeX, paper.md is generated via PDF -> MinerU fallback",
+        "The metadata includes a normalization section with backend info"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "这篇论文 repo 不一定找得到，但无论如何要把 repo_search.json 写出来。",
+      "expected_output": "Keep repo discovery evidence even when no confident repository can be cloned.",
+      "files": [],
+      "expectations": [
+        "The output includes repo_search.json or repo_search in metadata",
+        "The repo search results include a candidates list even if empty",
+        "If no medium/high confidence repo is found, the selected field is null but candidates are preserved",
+        "The skill does not fail when no repo can be cloned"
+      ]
+    }
+  ]
+}

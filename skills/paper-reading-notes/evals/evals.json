@@ -1,0 +1,41 @@
+{
+  "skill_name": "paper-reading-notes",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "基于已经准备好的 raw bundle，给我写一份研究型阅读笔记，不要写成普通摘要。",
+      "expected_output": "Write a note that follows the research-note ontology rather than a generic summary.",
+      "files": [],
+      "expectations": [
+        "The note begins with Source URL and Local Raw Path headers",
+        "The note includes a one-sentence summary section",
+        "The note includes a 'What problem does this paper really solve?' section",
+        "The note includes a 'Core idea' section distinct from method pipeline",
+        "The note is not just a generic abstract-style summary"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "这篇论文有 repo，请把代码映射和 claim-to-evidence 也写进去。",
+      "expected_output": "Use repo context for code alignment and organize experiments by claim.",
+      "files": [],
+      "expectations": [
+        "The note includes a Code Alignment section",
+        "The code alignment maps paper concepts to specific files or modules",
+        "The experimental evidence section is organized by claims",
+        "Each claim has associated evidence from the paper"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "如果 repo 不可信或没找到，就在笔记里明确说明，不要假装完成了 code alignment。",
+      "expected_output": "Respect the repo-confidence guardrail and state uncertainty explicitly.",
+      "files": [],
+      "expectations": [
+        "The note explicitly states when no trustworthy repo is available",
+        "The code alignment section acknowledges uncertainty rather than fabricating mappings",
+        "The note does not claim code alignment that cannot be verified"
+      ]
+    }
+  ]
+}

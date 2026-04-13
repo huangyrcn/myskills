@@ -1,0 +1,42 @@
+{
+  "skill_name": "paper-pipeline",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "帮我把 Geom-GCN 这篇论文从定位到做笔记整条链路跑完。",
+      "expected_output": "Run resolve, acquisition, and note generation in order.",
+      "files": [],
+      "expectations": [
+        "The workflow runs resolve first to identify the paper",
+        "The workflow runs acquire to download raw assets",
+        "The workflow generates a reading note",
+        "The raw bundle is stored under ~/papers/{title_slug}",
+        "The reading note includes Source URL and Local Raw Path headers"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "这个 OpenReview 链接对应的论文帮我做成研究笔记，如果本地已有 raw 就复用。https://openreview.net/forum?id=SkgBfaNKPr",
+      "expected_output": "Handle OpenReview-first resolution, reuse existing raw when possible, and produce the note.",
+      "files": [],
+      "expectations": [
+        "The workflow resolves the OpenReview URL to a paper identity",
+        "If local raw exists, it is reused without re-downloading",
+        "The workflow produces a reading note",
+        "The workflow handles papers that may not have a DOI or final venue"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "我只给标题，你来定位论文、下载 raw、找 repo，然后把阅读笔记写到当前项目的 ./papers 下面。",
+      "expected_output": "Respect the default project-local note output while keeping canonical raw under ~/papers.",
+      "files": [],
+      "expectations": [
+        "The workflow resolves the paper from title only",
+        "Raw assets are stored under ~/papers/{title_slug}",
+        "The reading note is written to ./papers/{title_slug}/reading-note.md (not ~/papers)",
+        "The note output path follows the re-entry policy"
+      ]
+    }
+  ]
+}

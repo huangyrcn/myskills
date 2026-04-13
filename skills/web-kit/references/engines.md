@@ -42,8 +42,7 @@ ask-search "query" --categories news       # 只搜新闻
 | openairepublications | - | OpenAIRE 论文 |
 | openalex | - | OpenAlex 学术图谱 |
 | pubmed | pm | PubMed 生物医学 |
-| semantic scholar | se | Semantic Scholar（网页爬取） |
-| semantic scholar api | ssa | Semantic Scholar（API，更稳定） |
+| semantic scholar | se | Semantic Scholar（API 版本） |
 
 ## 新闻 (news)
 

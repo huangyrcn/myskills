@@ -12,11 +12,21 @@ allowed-tools: Skill, Read, Bash
 
 End-to-end paper workflow. Calls other paper-* skills sequentially.
 
+## Storage
+
+**Canonical store**: `~/papers/{title_slug}/`
+
+**Project symlink** (when cwd ≠ ~):
+- Create `./papers/` if not exists
+- Symlink: `./papers/{venue_year}-{method}-{first_author}` → `~/papers/{title_slug}/`
+
+Example: `iclr2017-gcn-kipf` → `~/papers/semi_supervised_classification_with_graph_convolutional_networks/`
+
 ## Pipeline
 
 **Default**: resolve → acquire → repo
 
-**With --with-notes**: resolve → acquire → repo → reading-notes
+**Notes**: Only if user requests ("笔记", "reading notes", "--with-notes")
 
 ## Execution Steps
 
@@ -59,7 +69,17 @@ Call: `Skill(skill="paper-reading-notes", args="{title_slug} --output {path}")`
 
 Output: `reading-note.md`
 
-Only runs if `--with-notes` is set.
+Only runs if user requests notes.
+
+### Step 5: Project Symlink (cwd ≠ ~)
+
+If current working directory is not `~`:
+
+1. Read `~/papers/{title_slug}/metadata.yaml` for venue, year, first author
+2. Extract method name from title (acronym or key term)
+3. Create symlink: `./papers/{venue_year}-{method}-{first_author}` → `~/papers/{title_slug}/`
+
+Example naming: `iclr2017-gcn-kipf`
 
 ## Example
 

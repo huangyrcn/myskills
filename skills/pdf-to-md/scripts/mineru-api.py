@@ -174,7 +174,7 @@ def download_and_extract(zip_url: str, output_dir: Path, stem: str) -> Path:
                 break
 
         if images_src:
-            target_images = output_dir / f"{stem}_images"
+            target_images = output_dir / "images"
             if target_images.exists():
                 import shutil
                 shutil.rmtree(target_images)
@@ -239,8 +239,8 @@ def main():
 
     print()
     print(f"Done! {md_path}")
-    if (output_dir / f"{stem}_images").exists():
-        print(f"  + {stem}_images/")
+    if (output_dir / "images").exists():
+        print(f"  + images/")
 
 
 if __name__ == "__main__":

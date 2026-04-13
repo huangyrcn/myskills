@@ -42,3 +42,9 @@ skills-lock.json
 __pycache__/
 *.pyc
 .DS_Store
+
+# Skill evaluation workspaces
+skills/*-workspace/
+
+# Test artifacts
+skills/*/scripts/*-transformer-*

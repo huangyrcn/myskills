@@ -4,7 +4,7 @@ description: >
   Discover the official or community implementation repository for a resolved paper.
   Use this skill after paper-acquire when the user wants to find code, verify repo
   authenticity, or check if an implementation exists for a paper.
-argument-hint: "<title_slug> | <metadata_path>"
+argument-hint: "<folder_slug> | <metadata_path>"
 allowed-tools: Bash, Read, Edit, Write
 ---
 
@@ -54,12 +54,12 @@ Step 5: Write repo_search to metadata.yaml
 
 Read from:
 
-- `~/papers/{title_slug}/metadata.yaml`
+- `~/docs/papers/{folder_slug}/metadata.yaml`
   - `bibliography.authors` — for author verification
   - `bibliography.venue` — for context
   - `identity.aliases.doi` — for citation matching
-- `~/papers/{title_slug}/paper/paper.pdf`
-- `~/papers/{title_slug}/paper/paper.md`
+- `~/docs/papers/{folder_slug}/paper/paper.pdf`
+- `~/docs/papers/{folder_slug}/paper/paper.md`
 
 ## Output
 
@@ -100,7 +100,7 @@ repo_search:
 
 ```bash
 # Clone command
-cd ~/papers/{title_slug}
+cd ~/docs/papers/{folder_slug}
 git clone {repo_url} repo/
 ```
 
@@ -113,7 +113,7 @@ After cloning, update `cloned_to` field in metadata.yaml.
 Extract URLs from PDF metadata and annotations.
 
 ```bash
-python3 "${SKILL_DIR}/scripts/extract_urls_from_pdf.py" ~/papers/{title_slug}/paper/paper.pdf
+python3 "${SKILL_DIR}/scripts/extract_urls_from_pdf.py" ~/docs/papers/{folder_slug}/paper/paper.pdf
 ```
 
 Output: JSON list of URLs found in PDF with source annotation.
@@ -123,7 +123,7 @@ Output: JSON list of URLs found in PDF with source annotation.
 Extract code-related links from paper.md with surrounding context.
 
 ```bash
-python3 "${SKILL_DIR}/scripts/extract_code_links_from_md.py" ~/papers/{title_slug}/paper/paper.md
+python3 "${SKILL_DIR}/scripts/extract_code_links_from_md.py" ~/docs/papers/{folder_slug}/paper/paper.md
 ```
 
 Output: JSON list of code links with context lines.

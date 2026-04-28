@@ -14,13 +14,9 @@ End-to-end paper workflow. Calls other paper-* skills sequentially.
 
 ## Storage
 
-**Canonical store**: `~/papers/{title_slug}/`
+**Canonical store**: `~/docs/papers/{folder_slug}/`
 
-**Project symlink** (when cwd ≠ ~):
-- Create `./papers/` if not exists
-- Symlink: `./papers/{venue_year}-{method}-{first_author}` → `~/papers/{title_slug}/`
-
-Example: `iclr2017-gcn-kipf` → `~/papers/semi_supervised_classification_with_graph_convolutional_networks/`
+Example: `~/docs/papers/iclr2017-gcn-kipf/`
 
 ## Pipeline
 
@@ -43,43 +39,33 @@ Parse user arguments first:
 
 Call: `Skill(skill="paper-resolve", args="<paper_reference>")`
 
-Output: `~/papers/{title_slug}/metadata.yaml`
+Output: `~/docs/papers/{folder_slug}/metadata.yaml`
 
 Skip if: metadata.yaml already exists and `--refresh` not set.
 
 ### Step 2: paper-acquire
 
-Call: `Skill(skill="paper-acquire", args="{title_slug}")`
+Call: `Skill(skill="paper-acquire", args="{folder_slug}")`
 
-Output: `~/papers/{title_slug}/paper/paper.pdf`, `paper.md`
+Output: `~/docs/papers/{folder_slug}/paper/paper.pdf`, `paper.md`
 
 Skip if: paper.md already exists and `--refresh` not set.
 
 ### Step 3: paper-repo
 
-Call: `Skill(skill="paper-repo", args="{title_slug}")`
+Call: `Skill(skill="paper-repo", args="{folder_slug}")`
 
-Output: `~/papers/{title_slug}/repo/` (if found)
+Output: `~/docs/papers/{folder_slug}/repo/` (if found)
 
 Skip if: `--skip-repo` or repo already exists and `--refresh` not set.
 
 ### Step 4: paper-reading-notes
 
-Call: `Skill(skill="paper-reading-notes", args="{title_slug} --output {path}")`
+Call: `Skill(skill="paper-reading-notes", args="{folder_slug} --output {path}")`
 
 Output: `reading-note.md`
 
 Only runs if user requests notes.
-
-### Step 5: Project Symlink (cwd ≠ ~)
-
-If current working directory is not `~`:
-
-1. Read `~/papers/{title_slug}/metadata.yaml` for venue, year, first author
-2. Extract method name from title (acronym or key term)
-3. Create symlink: `./papers/{venue_year}-{method}-{first_author}` → `~/papers/{title_slug}/`
-
-Example naming: `iclr2017-gcn-kipf`
 
 ## Example
 
@@ -87,6 +73,6 @@ User: `"SpaMI spatial multi-omics --with-notes"`
 
 Execute:
 1. `Skill(skill="paper-resolve", args="SpaMI spatial multi-omics")`
-2. `Skill(skill="paper-acquire", args="spami_spatial_multi_omics_integration")`
-3. `Skill(skill="paper-repo", args="spami_spatial_multi_omics_integration")`
-4. `Skill(skill="paper-reading-notes", args="spami_spatial_multi_omics_integration")`
+2. `Skill(skill="paper-acquire", args="preprint2024-spami-pei")`
+3. `Skill(skill="paper-repo", args="preprint2024-spami-pei")`
+4. `Skill(skill="paper-reading-notes", args="preprint2024-spami-pei")`

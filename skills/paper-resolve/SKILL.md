@@ -24,7 +24,7 @@ Use web search to find the exact, official title of the paper. This is the found
 The goal is to determine:
 
 - `canonical_title` — the official paper title (required, from web search)
-- `title_slug` — filesystem identifier derived from canonical_title
+- `folder_slug` — filesystem identifier: `{venue}{year}-{method}-{first_author}`
 - `canonical_url` — primary source URL
 - stable identifiers when available (DOI, arXiv, etc.)
 - `resolution_confidence`
@@ -97,21 +97,7 @@ ask-search "\"{候选标题关键部分}\"" -e google -n 10
 - 前两次一致，第三次有偏差 → medium confidence
 - 结果不一致或有多个候选 → low confidence，需要用户确认
 
-### Step 2: Generate title_slug
-
-From the canonical title, generate a stable filesystem slug:
-
-1. Unicode normalize → transliterate to ASCII
-2. lowercase
-3. replace non-alphanumeric runs with `_`
-4. collapse repeated `_`, trim leading/trailing `_`
-5. cap length (e.g., `attention_is_all_you_need`)
-
-If collision occurs, add suffix (arXiv id, DOI hash, etc.)
-
-Read [references/title-slug.md](references/title-slug.md) for details.
-
-### Step 3: Collect Identifiers (Best Effort)
+### Step 2: Collect Identifiers (Best Effort)
 
 使用 ask-search 直接指定学术引擎搜索。**以下全部必查**：
 
@@ -192,12 +178,25 @@ Read [references/source-metadata-mapping.md](references/source-metadata-mapping.
 - 记录为 `null`，不影响整体置信度
 - 多个源一致即可确认
 
-### Step 4: Write metadata.yaml
+### Step 3: Generate folder_slug and Write metadata.yaml
+
+From the collected identifiers (venue, year, authors) and the canonical title, generate the folder slug:
+
+Format: `{venue}{year}-{method}-{first_author}`
+
+- `venue`: lowercase `bibliography.venue` (e.g., "ICLR" → `iclr`); fallback `"preprint"`
+- `year`: `bibliography.year`; fallback `"unknown"`
+- `method`: acronym or key term from title (e.g., "Geom-GCN: ..." → `geom-gcn`, "Attention Is All You Need" → `transformer`)
+- `first_author`: last name of first author, lowercase (e.g., "Thomas Kipf" → `kipf`)
+
+If collision occurs, add suffix (arXiv id, DOI hash, etc.)
+
+Read [references/folder-slug.md](references/folder-slug.md) for details.
 
 Write the resolved identity to:
 
 ```text
-~/papers/{title_slug}/metadata.yaml
+~/docs/papers/{folder_slug}/metadata.yaml
 ```
 
 Read [references/metadata-schema.md](references/metadata-schema.md) for the output format.
@@ -213,7 +212,7 @@ Understand what the user gave:
 | arXiv id/URL | Direct resolution → confirm title from arXiv |
 | OpenReview URL | Direct resolution → confirm title |
 | Publisher URL | Read page → extract title |
-| Local PDF path | Check existing ~/papers first |
+| Local PDF path | Check existing ~/docs/papers first |
 | Method name | Search method + context keywords → find proposing paper |
 
 ### Method Name Detection

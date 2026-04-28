@@ -8,7 +8,7 @@
 |-------|------|
 | `skill-manager` | 管理 agent skills：搜索、安装、更新、重装 |
 | `paper-pipeline` | 端到端论文工作流：resolve → acquire → repo → reading notes |
-| `paper-resolve` | 解析论文引用为 canonical identity，创建 ~/papers/{title_slug}/ |
+| `paper-resolve` | 解析论文引用为 canonical identity，创建 ~/papers/{folder_slug}/ |
 | `paper-acquire` | 获取论文 raw bundle：PDF、paper.md、LaTeX |
 | `paper-repo` | 发现论文实现仓库，验证官方/复现，写入 metadata |
 | `paper-reading-notes` | 从 raw bundle 生成研究型阅读笔记 |
@@ -43,7 +43,7 @@
 ### 目录结构
 
 ```
-~/papers/{title_slug}/
+~/papers/{folder_slug}/
   metadata.yaml
   paper/
     paper.pdf

@@ -4,7 +4,7 @@ The resolve stage owns the identity and bibliographic core of `metadata.yaml`.
 
 ```yaml
 title: "Geom-GCN: Geometric Graph Convolutional Networks"
-title_slug: "geom_gcn_geometric_graph_convolutional_networks"
+folder_slug: "iclr2020-geom-gcn-pei"
 
 identity:
   canonical_url: "https://arxiv.org/abs/2002.05287"

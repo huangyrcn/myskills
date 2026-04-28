@@ -5,7 +5,7 @@
 Split the old `paper-import` monolith into a small set of reusable skills with clear ownership:
 
 - `paper-resolve`: resolve a user's paper reference into a canonical paper identity
-- `paper-acquire`: build or update the canonical raw bundle under `~/papers/{title_slug}`
+- `paper-acquire`: build or update the canonical raw bundle under `~/papers/{folder_slug}`
 - `paper-reading-notes`: write research-style reading notes from an existing raw bundle
 - `paper-pipeline`: orchestrate the end-to-end flow
 
@@ -18,13 +18,13 @@ Keep `paper-import` as a legacy compatibility skill instead of the default entry
 Raw assets always live under:
 
 ```text
-~/papers/{title_slug}/
+~/papers/{folder_slug}/
 ```
 
 Suggested layout:
 
 ```text
-~/papers/{title_slug}/
+~/papers/{folder_slug}/
   metadata.yaml
   repo_search.json
   paper/
@@ -46,13 +46,13 @@ Output rules:
 2. If the user does not specify a note directory and the current working directory is not `~`, write notes to:
 
 ```text
-./papers/{title_slug}/reading-note.md
+./papers/{folder_slug}/reading-note.md
 ```
 
 3. If the user does not specify a note directory and the current working directory is `~`, write notes to:
 
 ```text
-~/tmp/paper-notes/{title_slug}/reading-note.md
+~/tmp/paper-notes/{folder_slug}/reading-note.md
 ```
 
 The note file must include:
@@ -81,7 +81,7 @@ Resolve success does **not** require DOI or venue.
 Minimum success set:
 
 - `canonical_title`
-- `title_slug`
+- `folder_slug`
 - `canonical_url`
 - one stable identifier when available
 - `resolution_confidence`
@@ -100,7 +100,7 @@ Populate or update the canonical raw bundle:
 Always produce:
 
 ```text
-~/papers/{title_slug}/paper/source.md
+~/papers/{folder_slug}/paper/source.md
 ```
 
 Backend policy:

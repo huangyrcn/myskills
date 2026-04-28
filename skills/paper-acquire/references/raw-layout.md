@@ -3,13 +3,13 @@
 Canonical raw assets live under:
 
 ```text
-~/papers/{title_slug}/
+~/docs/papers/{folder_slug}/
 ```
 
 Expected layout:
 
 ```text
-~/papers/{title_slug}/
+~/docs/papers/{folder_slug}/
   metadata.yaml
   paper/
     paper.pdf
@@ -24,7 +24,7 @@ Expected layout:
 
 ## Rules
 
-- keep raw assets under `~/papers`, never under the project-local note directory
+- keep raw assets under `~/docs/papers`, never under the project-local note directory
 - `paper.md` is the normalized paper text, not the reading note
 - `latex/` contains the original LaTeX source when available
 - `repo/` contains the cloned implementation repository when found

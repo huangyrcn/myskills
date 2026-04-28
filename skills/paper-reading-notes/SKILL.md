@@ -6,7 +6,7 @@ description: >
   research notes, compare paper claims with evidence, map the paper to code, or
   turn an already-downloaded paper into structured notes. Use this after resolve,
   acquire, and repo stages, not instead of them.
-argument-hint: "<title_slug> | <metadata_path> [--output <path>]"
+argument-hint: "<folder_slug> | <metadata_path> [--output <path>]"
 allowed-tools: Bash, Read, Write, Edit
 ---
 
@@ -18,8 +18,8 @@ Generate research-style reading notes from an existing raw bundle.
 
 This skill owns:
 
-- `./papers/{title_slug}/reading-note.md` (when cwd is not `~`)
-- `~/tmp/paper-notes/{title_slug}/reading-note.md` (when cwd is `~`)
+- `./papers/{folder_slug}/reading-note.md` (when cwd is not `~`)
+- `~/tmp/paper-notes/{folder_slug}/reading-note.md` (when cwd is `~`)
 - User-specified output path
 
 This skill does **not**:
@@ -45,8 +45,8 @@ Read from the canonical raw bundle:
 Choose destination in this order:
 
 1. User-specified `--output` path
-2. `./papers/{title_slug}/reading-note.md` when cwd is not `~`
-3. `~/tmp/paper-notes/{title_slug}/reading-note.md` when cwd is `~`
+2. `./papers/{folder_slug}/reading-note.md` when cwd is not `~`
+3. `~/tmp/paper-notes/{folder_slug}/reading-note.md` when cwd is `~`
 
 ## Note Contract
 
@@ -65,13 +65,13 @@ Read [references/note-ontology.md](references/note-ontology.md) for section stru
 ## Script
 
 ```bash
-python3 "${SKILL_DIR}/scripts/generate_note.py" "{title_slug}"
-python3 "${SKILL_DIR}/scripts/generate_note.py" "{title_slug}" --output ./notes/reading-note.md
+python3 "${SKILL_DIR}/scripts/generate_note.py" "{folder_slug}"
+python3 "${SKILL_DIR}/scripts/generate_note.py" "{folder_slug}" --output ./notes/reading-note.md
 python3 "${SKILL_DIR}/scripts/generate_note.py" "/path/to/paper/bundle"
 ```
 
 The script:
-- Locates raw bundle from title_slug or path
+- Locates raw bundle from folder_slug or path
 - Reads `metadata.yaml`, `paper.md`, `repo_search`
 - Determines output path based on cwd
 - Prints assembled context for note generation
@@ -112,7 +112,7 @@ Every note must begin with:
 **Source**: {urls.canonical}
 **Authors**: {bibliography.authors}
 **Venue**: {bibliography.venue} ({bibliography.year})
-**Local Path**: ~/papers/{title_slug}
+**Local Path**: ~/docs/papers/{folder_slug}
 
 > Generated: {date}
 ```

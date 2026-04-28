@@ -30,7 +30,7 @@ LEGACY_SCRIPTS = Path(__file__).resolve().parents[2] / "paper-import" / "scripts
 if str(LEGACY_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(LEGACY_SCRIPTS))
 
-from metadata_utils import find_existing_import, load_metadata, slugify, title_slug, write_metadata
+from metadata_utils import find_existing_import, load_metadata, slugify, write_metadata
 
 # Import legacy providers and helpers
 try:
@@ -127,7 +127,7 @@ def detect_input_type(query: str) -> tuple[str, str]:
 
 def scan_local_papers(papers_dir: Path, *, title: Optional[str] = None, doi: Optional[str] = None) -> Optional[Path]:
     """
-    Scan ~/papers for an existing bundle matching title or DOI.
+    Scan ~/docs/papers for an existing bundle matching title or DOI.
     """
     if not papers_dir.exists():
         return None
@@ -363,14 +363,47 @@ def resolve_by_title(title: str, papers_dir: Path) -> Optional[dict]:
 
 # === Metadata Construction ===
 
-def build_resolve_metadata(resolved: dict, *, title_slug_override: Optional[str] = None) -> dict:
+def _extract_method(title: str) -> str:
+    """Extract method name from title: acronym before colon, or key term."""
+    if ":" in title:
+        before_colon = title.split(":")[0].strip()
+        if before_colon.isupper() or len(before_colon.split()) <= 2:
+            return before_colon.lower().replace(" ", "-")
+    words = title.split()
+    for w in words:
+        if w.isupper() and len(w) >= 2:
+            return w.lower()
+    return slugify(words[0]) if words else "unknown"
+
+
+def _last_name(author: str) -> str:
+    """Extract lowercase last name from full author name."""
+    return author.strip().split()[-1].lower() if author else "unknown"
+
+
+def folder_slug(title: str, venue: Optional[str], year, authors: list) -> str:
+    """Generate folder slug: {venue}{year}-{method}-{first_author}."""
+    v = (venue or "preprint").lower().replace(" ", "")
+    y = str(year) if year else "unknown"
+    m = _extract_method(title)
+    a = _last_name(authors[0]) if authors else ""
+    parts = [f"{v}{y}-{m}"]
+    if a:
+        parts.append(a)
+    return "-".join(parts)
+
+
+def build_resolve_metadata(resolved: dict, *, folder_slug_override: Optional[str] = None) -> dict:
     """
     Build the full metadata.yaml content with resolve schema + legacy compatibility.
     """
     now = datetime.now().isoformat()
 
     title = resolved.get("title", "")
-    slug = title_slug_override or title_slug(title)
+    venue = resolved.get("venue")
+    year = resolved.get("year")
+    authors = resolved.get("authors", [])
+    slug = folder_slug_override or folder_slug(title, venue, year, authors)
 
     # Determine primary ID type and value
     arxiv_id = resolved.get("arxiv_id")
@@ -404,7 +437,7 @@ def build_resolve_metadata(resolved: dict, *, title_slug_override: Optional[str]
     metadata = {
         "created_at": now,
         "title": title,
-        "title_slug": slug,
+        "folder_slug": slug,
 
         "identity": {
             "canonical_url": canonical_url,
@@ -572,7 +605,7 @@ def resolve_paper(
     metadata = build_resolve_metadata(resolved)
 
     # Determine output path
-    slug = metadata["title_slug"]
+    slug = metadata["folder_slug"]
     paper_dir = output_dir / slug
 
     # Check for existing
@@ -599,7 +632,7 @@ def resolve_paper(
 def main() -> None:
     parser = argparse.ArgumentParser(description="Resolve a paper reference into canonical identity metadata")
     parser.add_argument("query", help="Paper title, DOI, arXiv ID/URL, OpenReview URL, or local path")
-    parser.add_argument("--papers-dir", "-p", default="~/papers", help="Directory for paper storage (default: ~/papers)")
+    parser.add_argument("--papers-dir", "-p", default="~/docs/papers", help="Directory for paper storage (default: ~/docs/papers)")
     parser.add_argument("--output", "-o", help="Output directory for metadata (default: papers-dir)")
     parser.add_argument("--force", "-f", action="store_true", help="Overwrite existing metadata")
     args = parser.parse_args()

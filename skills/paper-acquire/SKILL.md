@@ -1,11 +1,11 @@
 ---
 name: paper-acquire
 description: >
-  Build or update the canonical raw bundle for a resolved paper under `~/papers/{title_slug}`.
+  Build or update the canonical raw bundle for a resolved paper under `~/docs/papers/{folder_slug}`.
   Use this skill whenever the user wants to download a paper PDF and normalize it into `paper.md`.
   For repository discovery, use `paper-repo` skill after this one.
   Prefer this skill for raw acquisition work; do not use it to write reading notes.
-argument-hint: "<title_slug> | <metadata_path>"
+argument-hint: "<folder_slug> | <metadata_path>"
 allowed-tools: Bash, Read, Write, Edit
 ---
 
@@ -17,10 +17,10 @@ Hydrate the canonical raw bundle for a resolved paper.
 
 This skill owns:
 
-- `~/papers/{title_slug}/metadata.yaml` (extends with assets, normalization)
-- `~/papers/{title_slug}/paper/paper.pdf`
-- `~/papers/{title_slug}/paper/paper.md`
-- `~/papers/{title_slug}/paper/paper_images/`
+- `~/docs/papers/{folder_slug}/metadata.yaml` (extends with assets, normalization)
+- `~/docs/papers/{folder_slug}/paper/paper.pdf`
+- `~/docs/papers/{folder_slug}/paper/paper.md`
+- `~/docs/papers/{folder_slug}/paper/paper_images/`
 
 This skill does **not**:
 - Write the final reading note

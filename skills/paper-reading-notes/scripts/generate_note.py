@@ -28,7 +28,7 @@ def find_raw_bundle(query: str, papers_dir: Path) -> Path | None:
     - A path to the raw bundle directory
     - A path to metadata.yaml
     - A title slug
-    - A paper title (will search ~/papers)
+    - A paper title (will search ~/docs/papers)
     """
     query = query.strip()
     path = Path(query)
@@ -42,7 +42,7 @@ def find_raw_bundle(query: str, papers_dir: Path) -> Path | None:
             return path.parent
         return None
 
-    # Check if it's a title_slug in papers_dir
+    # Check if it's a folder_slug in papers_dir
     slug_path = papers_dir / query
     if slug_path.is_dir() and (slug_path / "metadata.yaml").exists():
         return slug_path
@@ -95,8 +95,8 @@ def determine_output_path(
 
     Rules:
     1. If user specifies output, use it.
-    2. If cwd is not ~, write to ./papers/{title_slug}/reading-note.md
-    3. If cwd is ~, write to ~/tmp/paper-notes/{title_slug}/reading-note.md
+    2. If cwd is not ~, write to ./papers/{folder_slug}/reading-note.md
+    3. If cwd is ~, write to ~/tmp/paper-notes/{folder_slug}/reading-note.md
     """
     if user_output:
         return user_output
@@ -105,7 +105,7 @@ def determine_output_path(
         cwd = Path.cwd()
 
     metadata = load_metadata(bundle_path / "metadata.yaml")
-    slug = metadata.get("title_slug", bundle_path.name)
+    slug = metadata.get("folder_slug", bundle_path.name)
 
     home = Path.home()
     if cwd.resolve() == home.resolve():
@@ -134,7 +134,7 @@ def prepare_note_context(bundle_path: Path) -> dict:
 
     # Get canonical info
     title = metadata.get("title", "")
-    slug = metadata.get("title_slug", bundle_path.name)
+    slug = metadata.get("folder_slug", bundle_path.name)
 
     # New schema
     identity = metadata.get("identity", {})
@@ -152,7 +152,7 @@ def prepare_note_context(bundle_path: Path) -> dict:
     context = {
         "bundle_path": str(bundle_path),
         "title": title,
-        "title_slug": slug,
+        "folder_slug": slug,
         "canonical_url": canonical_url,
         "authors": authors,
         "year": year,
@@ -179,7 +179,7 @@ def print_note_instructions(context: dict, output_path: Path) -> None:
     print("=" * 60)
     print()
     print(f"Title: {context['title']}")
-    print(f"Slug: {context['title_slug']}")
+    print(f"Slug: {context['folder_slug']}")
     print(f"Source URL: {context['canonical_url']}")
     print(f"Local Raw Path: {context['bundle_path']}")
     print()
@@ -219,7 +219,7 @@ def print_note_instructions(context: dict, output_path: Path) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Prepare context for reading note generation")
     parser.add_argument("query", help="Path to raw bundle, title slug, or paper title")
-    parser.add_argument("--papers-dir", "-p", default="~/papers", help="Directory for paper storage")
+    parser.add_argument("--papers-dir", "-p", default="~/docs/papers", help="Directory for paper storage")
     parser.add_argument("--output", "-o", help="Output path for the reading note")
     parser.add_argument("--cwd", help="Working directory for determining output path")
     args = parser.parse_args()
